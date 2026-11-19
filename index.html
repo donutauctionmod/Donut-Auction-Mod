@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donut Auction Mod</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: an auction-house lot catalogue. Mono lot numbers and spec rows, one big glazed-donut hero, one hammer-fall SOLD stamp. */
+:root{
+  --ground:#fbf3ea;
+  --ink:#2a1710;
+  --glaze:#5bb8f0;--glaze-text:#1a73ad;
+  --glaze-soft:#d9eefb;--deal:#1d7a45;--card:#ffffff;
+  --crumb:#8a6a58;
+  --rule:#e4d3c3;
+  --display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#1d110c;--ink:#f6e8da;--glaze:#8fd3ff;--glaze-text:#8fd3ff;--glaze-soft:#1b2f3c;--deal:#5fd38f;--card:#26170f;--crumb:#b99a86;--rule:#3a2a21;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#1d110c;--ink:#f6e8da;--glaze:#8fd3ff;--glaze-text:#8fd3ff;--glaze-soft:#1b2f3c;--deal:#5fd38f;--card:#26170f;--crumb:#b99a86;--rule:#3a2a21;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);line-height:1.6}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--glaze);outline-offset:3px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:13px}
+header.top nav{display:flex;gap:20px;flex-wrap:wrap}
+header.top a{text-decoration:none;color:var(--crumb)}
+header.top a:hover{color:var(--glaze-text)}
+.brand{font-weight:700;color:var(--ink)}
+
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center;padding:56px 0 48px}
+.lot{font-family:var(--mono);font-size:13px;color:var(--glaze-text);letter-spacing:.08em;text-transform:uppercase}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(44px,8vw,88px);line-height:.95;margin:12px 0 20px;letter-spacing:-.03em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--glaze-text)}
+.lede{max-width:46ch;font-size:19px;color:var(--ink)}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.btn{font-family:var(--mono);font-weight:700;font-size:14px;text-decoration:none;padding:14px 20px;border:2px solid var(--ink);border-radius:4px;display:inline-block;background:transparent;color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--glaze);border-color:var(--glaze);color:#10222e}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:3px 3px 0 var(--ink)}
+.btn.primary:hover{box-shadow:3px 3px 0 var(--ink)}
+.btn[aria-disabled="true"]{opacity:.7;cursor:not-allowed}
+
+.donut{position:relative;display:grid;place-items:center}
+.donut svg{width:min(100%,340px);height:auto;animation:bob 5s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(2deg)}}
+.stamp{position:absolute;right:2%;bottom:6%;font-family:var(--mono);font-weight:700;font-size:28px;letter-spacing:.1em;color:var(--glaze-text);border:4px solid var(--glaze-text);padding:4px 14px;border-radius:4px;background:var(--ground);transform:rotate(-12deg);animation:slam .5s cubic-bezier(.2,1.6,.4,1) .4s both}
+@keyframes slam{from{transform:rotate(-12deg) scale(2.2);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
+
+.specs{display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid var(--ink);border-bottom:1px solid var(--rule)}
+.spec{padding:18px 16px 18px 0}
+.spec dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--crumb)}
+.spec dd{margin:4px 0 0;font-family:var(--mono);font-weight:700;font-size:17px;overflow-wrap:anywhere}
+
+section{padding:64px 0 0}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;margin:0 0 8px}
+.kicker{font-family:var(--mono);font-size:13px;color:var(--crumb);margin:0 0 28px}
+
+.lots{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0;margin:0;list-style:none}
+.card{border:1px solid var(--rule);border-radius:6px;padding:20px;background:var(--ground);min-height:150px}
+.card .n{font-family:var(--mono);font-size:12px;color:var(--glaze-text);font-weight:700}
+.card h3{font-family:var(--display);font-size:22px;margin:6px 0}
+.card p{margin:0;color:var(--crumb)}
+.card.todo{border-style:dashed;background:var(--glaze-soft)}
+
+ol.steps{padding:0;margin:0;list-style:none;display:grid;gap:0;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:56px 1fr;gap:12px;padding:18px 0;border-top:1px solid var(--rule)}
+ol.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-weight:700;color:var(--glaze-text);font-size:20px}
+ol.steps strong{font-family:var(--display);font-size:19px}
+code{font-family:var(--mono);font-size:.9em;background:var(--glaze-soft);padding:1px 6px;border-radius:3px}
+.note{font-family:var(--mono);font-size:12px;color:var(--crumb);margin-top:12px}
+
+footer{margin-top:80px;padding:28px 0 48px;border-top:2px solid var(--ink);font-family:var(--mono);font-size:12px;color:var(--crumb);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* demo board: in-game style auction GUI with the mod's overlay (always dark, it sits "in game") */
+.demo-tag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--glaze-soft);color:var(--glaze-text);padding:3px 8px;border-radius:3px}
+.board{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;margin-top:16px;align-items:start}
+.panel{border:1px solid var(--rule);border-radius:10px;background:var(--card)}
+.mc-stage{
+  --slot:clamp(36px,10.4vw,74px);--gap:clamp(4px,1vw,7px);
+  --gui-text:#f1eef6;--gui-dim:#8f889c;--good:#3be36a;--good-text:#86ffa8;--bad:#ff5a5a;--bad-text:#ff9090;
+  position:relative;border-radius:12px;padding:clamp(18px,4vw,44px) clamp(10px,3vw,40px);display:grid;place-items:center;overflow:hidden;
+  background:
+    radial-gradient(900px 420px at 50% -15%,rgba(84,120,170,.45),transparent 60%),
+    radial-gradient(700px 300px at 50% 115%,rgba(60,110,60,.35),transparent 65%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 8px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 8px),
+    #0a0c11;
+  font-family:'VT323',ui-monospace,monospace;color:var(--gui-text);color-scheme:dark}
+.mc-gui{width:max-content;max-width:100%;background:linear-gradient(180deg,rgba(36,33,43,.97),rgba(21,19,25,.97));border:1px solid #3b3744;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 1px #000,inset 0 1px 0 rgba(255,255,255,.07);padding:clamp(10px,2.4vw,18px)}
+.mc-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 2px 12px}
+.mc-title{font-size:clamp(22px,4.6vw,30px);line-height:1;letter-spacing:.02em;text-shadow:2px 2px 0 #000}
+.mc-title em{font-style:normal;color:var(--gui-dim);margin-left:8px}
+.mc-chip{font-size:clamp(16px,3.4vw,20px);line-height:1;color:var(--good-text);background:rgba(59,227,106,.12);border:1px solid rgba(134,255,168,.3);border-radius:5px;padding:4px 9px;white-space:nowrap}
+.mc-grid{display:grid;grid-template-columns:repeat(7,var(--slot));grid-auto-rows:var(--slot);gap:var(--gap)}
+.mc-foot{display:flex;justify-content:space-between;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid #2c2933;font-size:clamp(16px,3.4vw,20px);color:var(--gui-dim)}
+.mc-foot b{font-weight:400;color:var(--good-text)}
+.slot{position:relative;width:var(--slot);height:var(--slot);padding:clamp(3px,.8vw,6px) 3px 3px;margin:0;border:0;border-radius:7px;cursor:pointer;color:var(--gui-text);font:inherit;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,#221f28,#151318);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -2px 0 rgba(0,0,0,.45),0 0 0 1px #09080b;
+  transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+.slot:hover,.slot:focus-visible{transform:translateY(-2px);background:linear-gradient(180deg,#2f2b37,#1b1920);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(255,255,255,.45),0 8px 18px rgba(0,0,0,.45);outline:none;z-index:2}
+.slot.empty{cursor:default;opacity:.45}
+.slot.empty:hover{transform:none;background:linear-gradient(180deg,#221f28,#151318);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px #09080b}
+.ph{display:grid;place-items:center;width:44%;aspect-ratio:1;flex:none;border-radius:6px;background:linear-gradient(135deg,#46404f,#27242d);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.4);color:#c9c2d4;font-size:calc(var(--slot)*.3);line-height:1;pointer-events:none}
+.slot img{width:44%;aspect-ratio:1;image-rendering:pixelated;pointer-events:none;flex:none}
+.slot .price{font-size:max(12px,calc(var(--slot)*.24));line-height:1;color:#ece8f2;text-shadow:1px 1px 0 #000;pointer-events:none;white-space:nowrap}
+.slot .qty{position:absolute;top:3px;right:5px;font-size:max(11px,calc(var(--slot)*.2));line-height:1;color:#fff;text-shadow:1px 1px 0 #000;pointer-events:none}
+.slot .tag{width:100%;font-size:max(11px,calc(var(--slot)*.22));line-height:1.15;text-align:center;border-radius:4px;pointer-events:none;flex:none}
+.tag.under{background:rgba(59,227,106,.15);color:var(--good-text);box-shadow:inset 0 0 0 1px rgba(134,255,168,.35)}
+.tag.over{background:rgba(255,90,90,.15);color:var(--bad-text);box-shadow:inset 0 0 0 1px rgba(255,144,144,.35)}
+.tag.even{background:rgba(255,255,255,.07);color:#cfcbd6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.tag.snipe{background:var(--good);color:#04230e}
+.slot.snipe{background:linear-gradient(180deg,#1f3a27,#14231a);box-shadow:0 0 0 2px var(--good),0 0 18px rgba(59,227,106,.45),inset 0 1px 0 rgba(255,255,255,.08);animation:pulse 2.4s ease-in-out infinite}
+.slot.snipe .star{position:absolute;top:2px;left:5px;font-size:max(11px,calc(var(--slot)*.2));line-height:1;color:var(--good-text);text-shadow:0 0 6px rgba(59,227,106,.8);pointer-events:none}
+@keyframes pulse{50%{box-shadow:0 0 0 2px var(--good),0 0 28px rgba(59,227,106,.7),inset 0 1px 0 rgba(255,255,255,.08)}}
+.mc-tip{position:absolute;pointer-events:none;z-index:5;min-width:210px;max-width:280px;padding:8px 11px 9px;font-size:20px;line-height:1.08;background:rgba(17,8,26,.97);border:2px solid #4b1fb0;border-radius:4px;box-shadow:0 0 0 1px #0c0512,0 14px 34px rgba(0,0,0,.55)}
+.mc-tip[hidden]{display:none}
+.mc-tip .sep{height:1px;background:linear-gradient(90deg,#4b1fb0,transparent);margin:6px 0}
+.mc-tip .big{font-size:23px}
+.c-w{color:#fff}.c-g{color:#86ffa8}.c-gr{color:#a9a2b6}.c-y{color:#ffff55}.c-a{color:#7fe9ff}.c-p{color:#ff6bff}.c-r{color:#ff9090}
+.mc-confirm{position:absolute;inset:0;background:rgba(4,4,8,.66);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:6;padding:16px}
+.mc-confirm[hidden]{display:none}
+.mc-dialog{width:min(400px,100%);text-align:center;background:linear-gradient(180deg,rgba(36,33,43,.98),rgba(21,19,25,.98));border:1px solid #3b3744;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.07);padding:20px 20px 18px}
+.mc-dialog .q{font-size:26px;line-height:1.05;text-shadow:2px 2px 0 #000}
+.mc-dialog .what{display:flex;flex-direction:column;align-items:center;gap:6px;margin:16px 0 8px}
+.mc-dialog .ph{width:64px;font-size:30px}
+.mc-dialog .name{font-size:22px;color:#fff}
+.mc-dialog .cost{font-size:34px;line-height:1;color:var(--good-text);text-shadow:0 0 12px rgba(59,227,106,.35)}
+.mc-dialog .modline{font-size:20px;margin:6px 0 16px}
+.mc-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mc-btn{font:24px 'VT323',monospace;padding:8px;border-radius:7px;cursor:pointer;transition:transform .1s ease,filter .1s ease}
+.mc-btn:hover,.mc-btn:focus-visible{transform:translateY(-1px);filter:brightness(1.2);outline:none}
+.mc-btn:focus-visible{box-shadow:0 0 0 2px #fff}
+.mc-btn.no{background:rgba(255,90,90,.14);border:1px solid rgba(255,144,144,.45);color:var(--bad-text)}
+.mc-btn.yes{background:rgba(59,227,106,.18);border:1px solid rgba(134,255,168,.5);color:var(--good-text)}
+.mc-toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:7;max-width:92%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:21px;padding:4px 14px;border-radius:999px;background:rgba(10,24,14,.92);border:1px solid rgba(134,255,168,.45);color:var(--good-text);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.mc-toast[hidden]{display:none}
+.detail{padding:18px;display:grid;gap:14px;align-content:start}
+.detail .sub{font-family:var(--mono);font-size:11px;color:var(--crumb);text-transform:uppercase;letter-spacing:.08em}
+.detail h3{font-family:var(--display);font-size:22px;margin:2px 0 0}
+.detail svg{width:100%;height:100px;display:block}
+.ctl{display:grid;gap:10px;font-family:var(--mono);font-size:12px;color:var(--crumb);padding-bottom:16px;border-bottom:1px solid var(--rule)}
+.ctl label{display:flex;align-items:center;gap:8px}
+.ctl input[type=range]{accent-color:var(--glaze-text);flex:1}
+.ctl input[type=checkbox]{accent-color:var(--glaze-text)}
+.mini{font-family:var(--mono);font-size:12px;font-weight:700;padding:7px 12px;border:2px solid var(--ink);border-radius:4px;background:transparent;color:var(--ink);cursor:pointer;justify-self:start}
+.mini:hover{background:var(--glaze);border-color:var(--glaze);color:#10222e}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;margin:0}
+.kv dt{color:var(--crumb)}
+.kv dd{margin:0;font-weight:700;text-align:right}
+.disclaimer{font-family:var(--mono);font-size:12px;color:var(--crumb);margin-top:10px}
+@media (max-width:960px){.board{grid-template-columns:1fr}}
+@media (max-width:520px){.slot .price{display:none}}
+@media (prefers-reduced-motion:reduce){.slot,.mc-btn{transition:none}.slot.snipe{animation:none}}
+
+/* faq */
+.faq{border-top:1px solid var(--rule)}
+.faq details{border-bottom:1px solid var(--rule)}
+.faq summary{cursor:pointer;list-style:none;padding:18px 0;font-family:var(--display);font-weight:800;font-size:19px;display:flex;justify-content:space-between;gap:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--mono);color:var(--glaze-text)}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{margin:0 0 18px;max-width:62ch}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr;padding-top:36px}
+  .specs{grid-template-columns:1fr 1fr}
+  .lots{grid-template-columns:1fr}
+  .board{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .donut svg,.stamp{animation:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="brand">DONUT AUCTION MOD</span>
+    <nav aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#demo">Demo</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a href="#download">Download</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <div class="lot">Fabric mod / DonutSMP / Minecraft 1.21.11</div>
+        <h1>Donut <em>Auction</em> Mod</h1>
+        <p class="lede">A Fabric mod for the DonutSMP auction house. Track prices, check the lowest orders and snipe undervalued items.</p>
+        <div class="cta">
+          <a class="btn primary" id="modrinth-btn" href="#download" aria-disabled="true">Coming soon to Modrinth</a>
+          <a class="btn" href="#install">How to install</a>
+        </div>
+      </div>
+      <div class="donut" aria-hidden="true">
+        <svg viewBox="0 0 200 200" role="img">
+          <ellipse cx="100" cy="112" rx="84" ry="76" fill="#c98a4b"/>
+          <ellipse cx="100" cy="100" rx="84" ry="76" fill="#e2a35c"/>
+          <path d="M16 100A84 76 0 0 1 184 100A84 64 0 0 1 16 100Z" fill="#7cc8f5"/>
+          <ellipse cx="100" cy="98" rx="32" ry="26" fill="#5fb3e8"/>
+          <ellipse cx="100" cy="98" rx="27" ry="21" fill="#c98a4b"/>
+          <ellipse cx="100" cy="102" rx="23" ry="16" style="fill:var(--ground,#fbf3ea)"/>
+          <g stroke-width="5" stroke-linecap="round">
+            <path d="M60 62l8-4" stroke="#fff"/><path d="M96 44l9 2" stroke="#ffe27a"/><path d="M132 60l8 5" stroke="#2f7fc0"/>
+            <path d="M52 92l9 1" stroke="#ffe27a"/><path d="M148 94l8-2" stroke="#fff"/><path d="M70 126l7-5" stroke="#2f7fc0"/>
+            <path d="M128 124l8 3" stroke="#ffe27a"/><path d="M100 140l2-9" stroke="#fff"/>
+          </g>
+        </svg>
+        <div class="stamp">SOLD</div>
+      </div>
+    </div>
+
+    <dl class="specs">
+      <div class="spec"><dt>Loader</dt><dd>Fabric</dd></div>
+      <div class="spec"><dt>Minecraft</dt><dd>1.21.11</dd></div>
+      <div class="spec"><dt>Version</dt><dd>1.0.0+mc1.21.11</dd></div>
+      <div class="spec"><dt>Server</dt><dd>DonutSMP</dd></div>
+    </dl>
+
+    <section id="features">
+      <h2>Features</h2>
+      <p class="kicker">// what it does</p>
+      <ul class="lots" id="feature-list"></ul>
+    </section>
+
+    <section id="demo">
+      <h2>Try the demo</h2>
+      <p class="kicker">// <span class="demo-tag">Example data</span> made-up listings, not real DonutSMP prices</p>
+      <div class="board">
+        <div class="mc-stage" id="stage">
+          <div class="mc-toast" id="toast" role="status" hidden></div>
+          <div class="mc-gui">
+            <div class="mc-head">
+              <span class="mc-title">Auction<em>Page 1</em></span>
+              <span class="mc-chip">Lowest price first</span>
+            </div>
+            <div class="mc-grid" id="grid" aria-label="Auction listings"></div>
+            <div class="mc-foot"><span id="foot-count"></span><b id="foot-snipes"></b></div>
+          </div>
+          <div class="mc-tip" id="tip" hidden></div>
+          <div class="mc-confirm" id="confirm" hidden>
+            <div class="mc-dialog" role="dialog" aria-modal="true" aria-labelledby="cf-q">
+              <div class="q" id="cf-q">Are you sure you want to buy this?</div>
+              <div class="what"><span id="cf-icon"></span><span class="name" id="cf-qty"></span><span class="cost" id="cf-price"></span></div>
+              <div class="modline" id="cf-mod"></div>
+              <div class="mc-btns">
+                <button class="mc-btn no" id="cf-no" type="button">No</button>
+                <button class="mc-btn yes" id="cf-yes" type="button">Yes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="panel detail">
+          <div class="ctl">
+            <div class="sub">Donut Auction Mod overlay</div>
+            <label for="thr">Snipe at <input type="range" id="thr" min="10" max="50" step="5" value="25"> <b id="thr-out">25%</b></label>
+            <label for="hl"><input type="checkbox" id="hl" checked> Highlight snipes</label>
+            <button class="mini" id="refresh" type="button">New listings</button>
+          </div>
+          <div id="detail" aria-live="polite"></div>
+        </aside>
+      </div>
+      <p class="disclaimer">Cheapest listings at the top, most expensive at the bottom. Hover one for its price info, click it to buy (nothing real happens).</p>
+    </section>
+
+<section id="install">
+      <h2>Install</h2>
+      <p class="kicker">// standard Fabric install</p>
+      <ol class="steps">
+        <li><div><strong>Install Fabric Loader for 1.21.11.</strong><br>Use the Fabric installer or your launcher of choice (Prism, the official launcher profile, etc.).</div></li>
+        <li><div><strong>Download the mod jar.</strong><br>Version <code>1.0.0+mc1.21.11</code> will be on Modrinth once it is published.</div></li>
+        <li><div><strong>Drop it in your <code>mods</code> folder.</strong><br>Add any required dependencies the Modrinth page lists, then launch the Fabric profile.</div></li>
+      </ol>
+      <p class="note">Dependencies (for example Fabric API) are not confirmed here. Check the mod's fabric.mod.json and list them.</p>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+      <p class="kicker">// questions people will ask</p>
+      <div class="faq" id="faq-list"></div>
+    </section>
+
+    <section id="download">
+      <h2>Download</h2>
+      <p class="kicker">// not on Modrinth yet</p>
+      <a class="btn primary" id="modrinth-btn-2" href="#download" aria-disabled="true">Coming soon to Modrinth</a>
+    </section>
+  </main>
+
+  <footer>
+    <span>Donut Auction Mod, 1.0.0+mc1.21.11</span>
+    <span>Not affiliated with DonutSMP or Mojang.</span>
+  </footer>
+</div>
+
+<script>
+/* All content that depends on the mod itself lives here. null means not provided yet. */
+var CONFIG = {
+  modrinthUrl: null, // e.g. "https://modrinth.com/mod/<your-slug>"
+  features: [
+    { title: 'Auction price tracking', text: 'Follow auction prices on DonutSMP so you can see where items are really selling.' },
+    { title: 'Lowest orders', text: 'See the lowest orders for an item at a glance.' },
+    { title: 'Undervalued item sniping', text: 'Spot undervalued items on the auction house and grab them before anyone else does.' }
+  ]
+};
+
+(function () {
+  var list = document.getElementById('feature-list');
+  CONFIG.features.forEach(function (f, i) {
+    var li = document.createElement('li');
+    li.className = 'card' + (f ? '' : ' todo');
+    var n = document.createElement('div');
+    n.className = 'n';
+    n.textContent = 'LOT ' + String(i + 1).padStart(2, '0');
+    var h = document.createElement('h3');
+    var p = document.createElement('p');
+    if (f) { h.textContent = f.title; p.textContent = f.text; }
+    else { h.textContent = 'Feature to fill in'; p.textContent = 'Describe what the mod does here.'; }
+    li.append(n, h, p);
+    list.appendChild(li);
+  });
+  if (CONFIG.modrinthUrl) {
+    ['modrinth-btn', 'modrinth-btn-2'].forEach(function (id) {
+      var a = document.getElementById(id);
+      a.href = CONFIG.modrinthUrl;
+      a.removeAttribute('aria-disabled');
+      a.textContent = 'Get it on Modrinth';
+    });
+  }
+})();
+/* FAQ: answer null = hidden until you fill it in. */
+var FAQ = [
+  { q: 'Which Minecraft version does it support?', a: 'Minecraft 1.21.11 on Fabric. The first release is planned as version 1.0.0+mc1.21.11.' },
+  { q: 'Is this bannable?', a: 'No. The mod only reads the auction information you can already see in game and shows it in a clearer way. It does not buy, sell or click anything for you, so every purchase is still made by you. As always, follow the server rules.' },
+  { q: 'Is this paid?', a: 'No. Donut Auction Mod is completely free.' }
+];
+(function () {
+  var box = document.getElementById('faq-list');
+  FAQ.filter(function (f) { return f.a; }).forEach(function (f) {
+    var d = document.createElement('details');
+    var sm = document.createElement('summary'); sm.textContent = f.q;
+    var p = document.createElement('p'); p.textContent = f.a;
+    d.append(sm, p); box.appendChild(d);
+  });
+})();
+
+/* Demo auction GUI with placeholder items. Every seller and price is invented. */
+(function () {
+  /* Put your own icon file here when you host the site, e.g. 'icons/item.png'. null = show the ? placeholder. */
+  var ICONS = { 'Placeholder': null };
+
+  var ITEM = 'Placeholder', AVG = 96000, SLOTS = 49;
+  var STACKS = [1, 1, 2, 4, 8, 16, 32, 64];
+  var SELLERS = ['glazedgamer', 'sprinkle_k', 'crumbtrader', 'holeyMoly', 'frostbyte', 'jellyfilled', 'dunkmaster', 'boxofdozen', 'sugarrush42', 'old_fashioned', 'maple_bar', 'creamfill'];
+
+  var seed = 11;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function fmt(n) {
+    if (n >= 1e6) return '$' + +(n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e5) return '$' + Math.round(n / 1e3) + 'K';
+    if (n >= 1e3) return '$' + +(n / 1e3).toFixed(1) + 'K';
+    return '$' + Math.round(n);
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function icon() {
+    var src = ICONS[ITEM];
+    if (src) { var im = new Image(); im.src = src; im.alt = ''; return im; }
+    var ph = document.createElement('span');
+    ph.className = 'ph'; ph.textContent = '?';
+    return ph;
+  }
+
+  var history = [], listings = [], pending = null;
+
+  function build() {
+    history = []; var val = AVG;
+    for (var d = 0; d < 14; d++) { val = val * (0.95 + rnd() * 0.1); history.push(val); }
+    var mean = history.reduce(function (a, b) { return a + b; }, 0) / history.length;
+    history = history.map(function (q) { return q * AVG / mean; });
+    listings = [];
+    for (var i = 0; i < SLOTS; i++) {
+      var qty = STACKS[Math.floor(rnd() * STACKS.length)];
+      var mult = rnd() < 0.2 ? 0.55 + rnd() * 0.2 : 0.85 + rnd() * 0.4;
+      var unit = AVG * mult;
+      listings.push({ qty: qty, unit: unit, price: unit * qty, seller: SELLERS[Math.floor(rnd() * SELLERS.length)] });
+    }
+  }
+  function ratio(l) { return l.unit / AVG; }
+  function pct(l) { return Math.round((ratio(l) - 1) * 100); }
+  function thr() { return Number(document.getElementById('thr').value) / 100; }
+  function isSnipe(l) { return ratio(l) <= 1 - thr(); }
+  function lowest() { var m = Infinity; listings.forEach(function (l) { if (l.unit < m) m = l.unit; }); return isFinite(m) ? m : AVG; }
+  function pctText(p) { return (p > 0 ? '+' : p < 0 ? '−' : '±') + Math.abs(p) + '%'; }
+  function pctClass(p) { return p > 0 ? 'c-r' : p < 0 ? 'c-g' : 'c-gr'; }
+  function label(l) { return (l.qty > 1 ? l.qty + 'x ' : '') + ITEM; }
+
+  var grid = document.getElementById('grid'), tip = document.getElementById('tip'), stage = document.getElementById('stage');
+
+  function tipHtml(l) {
+    var p = pct(l);
+    var t = '<div class="c-w big">' + ITEM + (l.qty > 1 ? ' <span class="c-gr">x' + l.qty + '</span>' : '') + '</div>';
+    t += '<div><span class="c-g">$</span> ' + fmt(l.price).slice(1) + (l.qty > 1 ? ' <span class="c-gr">(' + fmt(l.unit) + ' each)</span>' : '') + '</div>';
+    t += '<div class="c-gr">Seller: ' + esc(l.seller) + '</div>';
+    t += '<div class="sep"></div><div class="c-a">Donut Auction Mod</div>';
+    t += '<div class="c-gr">7d avg: <span class="c-w">' + fmt(AVG) + ' each</span></div>';
+    t += '<div class="c-gr">Lowest order: <span class="c-w">' + fmt(lowest()) + ' each</span></div>';
+    t += '<div class="' + pctClass(p) + '">' + pctText(p) + ' vs avg' + (isSnipe(l) ? '  ★ SNIPE' : p > 0 ? '  overpriced' : '') + '</div>';
+    return t;
+  }
+  function moveTip(e) {
+    var r = stage.getBoundingClientRect();
+    var x = e.clientX - r.left + 16, y = e.clientY - r.top - 12;
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    if (x + w > r.width - 6) x = e.clientX - r.left - w - 16;
+    if (y + h > r.height - 6) y = r.height - h - 6;
+    tip.style.left = Math.max(6, x) + 'px'; tip.style.top = Math.max(6, y) + 'px';
+  }
+
+  function render() {
+    var hl = document.getElementById('hl').checked;
+    var sorted = listings.slice().sort(function (a, b) { return a.price - b.price; });
+    grid.innerHTML = '';
+    for (var i = 0; i < SLOTS; i++) {
+      var l = sorted[i], b = document.createElement('button');
+      b.type = 'button'; b.className = 'slot';
+      if (!l) { b.className += ' empty'; b.tabIndex = -1; b.setAttribute('aria-hidden', 'true'); grid.appendChild(b); continue; }
+      (function (l, b) {
+        var p = pct(l), snipe = hl && isSnipe(l);
+        if (snipe) {
+          b.className += ' snipe';
+          var st = document.createElement('span'); st.className = 'star'; st.textContent = '★'; b.appendChild(st);
+        }
+        b.setAttribute('aria-label', label(l) + ', ' + fmt(l.price) + ', ' + pctText(p) + ' vs average' + (isSnipe(l) ? ', snipe' : ''));
+        b.appendChild(icon());
+        if (l.qty > 1) { var q = document.createElement('span'); q.className = 'qty'; q.textContent = 'x' + l.qty; b.appendChild(q); }
+        var pr = document.createElement('span'); pr.className = 'price'; pr.textContent = fmt(l.price); b.appendChild(pr);
+        var tg = document.createElement('span');
+        tg.className = 'tag ' + (snipe ? 'snipe' : p > 0 ? 'over' : p < 0 ? 'under' : 'even');
+        tg.textContent = pctText(p);
+        b.appendChild(tg);
+        b.addEventListener('mouseenter', function (e) { tip.innerHTML = tipHtml(l); tip.hidden = false; moveTip(e); });
+        b.addEventListener('mousemove', moveTip);
+        b.addEventListener('mouseleave', function () { tip.hidden = true; });
+        b.addEventListener('click', function () { tip.hidden = true; ask(l); });
+        grid.appendChild(b);
+      })(l, b);
+    }
+    var sn = listings.filter(isSnipe).length;
+    document.getElementById('foot-count').textContent = listings.length + ' listings';
+    document.getElementById('foot-snipes').textContent = sn ? '★ ' + sn + ' snipe' + (sn === 1 ? '' : 's') : 'No snipes';
+    detail();
+  }
+
+  var lastFocus = null;
+  function ask(l) {
+    pending = l; lastFocus = document.activeElement;
+    var ic = document.getElementById('cf-icon'); ic.innerHTML = ''; ic.appendChild(icon());
+    document.getElementById('cf-qty').textContent = label(l);
+    document.getElementById('cf-price').textContent = fmt(l.price);
+    var p = pct(l);
+    document.getElementById('cf-mod').innerHTML = '<span class="c-a">Mod:</span> <span class="' + pctClass(p) + '">' + pctText(p) + ' vs 7d avg</span>' + (isSnipe(l) ? ' <span class="c-g">★ SNIPE</span>' : '');
+    document.getElementById('confirm').hidden = false;
+    document.getElementById('cf-yes').focus();
+  }
+  function close() { document.getElementById('confirm').hidden = true; pending = null; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  document.getElementById('cf-no').addEventListener('click', close);
+  document.getElementById('cf-yes').addEventListener('click', function () {
+    if (!pending) return;
+    var l = pending;
+    listings = listings.filter(function (x) { return x !== l; });
+    document.getElementById('confirm').hidden = true; pending = null;
+    render();
+    toast('Bought ' + label(l) + ' for ' + fmt(l.price) + ' (demo)');
+  });
+  document.getElementById('confirm').addEventListener('click', function (e) { if (e.target === this) close(); });
+  document.getElementById('confirm').addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+  var tt;
+  function toast(t) { var el = document.getElementById('toast'); el.textContent = t; el.hidden = false; clearTimeout(tt); tt = setTimeout(function () { el.hidden = true; }, 2400); }
+
+  function detail() {
+    var h = history, low = lowest();
+    var mn = Math.min.apply(null, h.concat([low])), mx = Math.max.apply(null, h);
+    var W = 248, H = 100, P = 8;
+    function x(i) { return P + i * (W - 2 * P) / (h.length - 1); }
+    function y(q) { return H - P - (q - mn) / (mx - mn || 1) * (H - 2 * P); }
+    var pts = h.map(function (q, i) { return x(i).toFixed(1) + ',' + y(q).toFixed(1); });
+    var area = 'M' + x(0) + ',' + (H - P) + ' L' + pts.join(' L') + ' L' + x(h.length - 1) + ',' + (H - P) + 'Z';
+    var change = h[h.length - 1] / h[0] - 1;
+    var snipes = listings.filter(isSnipe).length;
+    var el = document.getElementById('detail');
+    el.innerHTML =
+      '<div class="sub">Price tracking, 14 days</div><h3>' + ITEM + '</h3>' +
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="14 day price history">' +
+      [0.25, 0.5, 0.75].map(function (f) { var yy = P + f * (H - 2 * P); return '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--rule)"/>'; }).join('') +
+      '<path d="' + area + '" fill="var(--glaze)" opacity=".25"/>' +
+      '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--glaze-text)" stroke-width="2.5" stroke-linejoin="round"/>' +
+      '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y(low) + '" y2="' + y(low) + '" stroke="var(--deal)" stroke-width="1.5" stroke-dasharray="4 3"/>' +
+      '<circle cx="' + x(h.length - 1) + '" cy="' + y(h[h.length - 1]) + '" r="4" fill="var(--glaze-text)"/></svg>' +
+      '<dl class="kv"><dt>Lowest order</dt><dd style="color:var(--deal)">' + fmt(low) + ' each</dd>' +
+      '<dt>7d average</dt><dd>' + fmt(AVG) + ' each</dd>' +
+      '<dt>14d change</dt><dd>' + (change >= 0 ? '+' : '') + (change * 100).toFixed(1) + '%</dd>' +
+      '<dt>Listings now</dt><dd>' + listings.length + '</dd>' +
+      '<dt>Snipes now</dt><dd style="color:var(--deal)">' + snipes + '</dd></dl>';
+  }
+
+  document.getElementById('thr').addEventListener('input', function () { document.getElementById('thr-out').textContent = this.value + '%'; render(); });
+  document.getElementById('hl').addEventListener('change', render);
+  document.getElementById('refresh').addEventListener('click', function () { seed = Math.floor(Math.random() * 2147483646) + 1; build(); render(); toast('New listings loaded'); });
+
+  build(); render();
+})();
+</script>
+</body>
+</html>
