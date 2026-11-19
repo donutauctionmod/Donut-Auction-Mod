@@ -207,7 +207,7 @@ footer{margin-top:80px;padding:28px 0 48px;border-top:2px solid var(--ink);font-
         <h1>Donut <em>Auction</em> Mod</h1>
         <p class="lede">A Fabric mod for the DonutSMP auction house. Track prices, check the lowest orders and snipe undervalued items.</p>
         <div class="cta">
-          <a class="btn primary" id="modrinth-btn" href="#download" aria-disabled="true">Coming soon to Modrinth</a>
+          <a class="btn primary" id="modrinth-btn" href="#download" aria-disabled="true">Download (dependency)</a>
           <a class="btn" href="#install">How to install</a>
         </div>
       </div>
@@ -287,7 +287,7 @@ footer{margin-top:80px;padding:28px 0 48px;border-top:2px solid var(--ink);font-
       <p class="kicker">// standard Fabric install</p>
       <ol class="steps">
         <li><div><strong>Install Fabric Loader for 1.21.11.</strong><br>Use the Fabric installer or your launcher of choice (Prism, the official launcher profile, etc.).</div></li>
-        <li><div><strong>Download the mod jar.</strong><br>Version <code>1.0.0+mc1.21.11</code> will be on Modrinth once it is published.</div></li>
+        <li><div><strong>Download the mod jar.</strong><br>The mod itself isn’t published yet. The button below currently links to Fabric API, a dependency the mod will need — not the mod.</div></li>
         <li><div><strong>Drop it in your <code>mods</code> folder.</strong><br>Add any required dependencies the Modrinth page lists, then launch the Fabric profile.</div></li>
       </ol>
       <p class="note">Dependencies (for example Fabric API) are not confirmed here. Check the mod's fabric.mod.json and list them.</p>
@@ -301,8 +301,8 @@ footer{margin-top:80px;padding:28px 0 48px;border-top:2px solid var(--ink);font-
 
     <section id="download">
       <h2>Download</h2>
-      <p class="kicker">// not on Modrinth yet</p>
-      <a class="btn primary" id="modrinth-btn-2" href="#download" aria-disabled="true">Coming soon to Modrinth</a>
+      <p class="kicker">// dependency placeholder, not the mod yet</p>
+      <a class="btn primary" id="modrinth-btn-2" href="#download" aria-disabled="true">Download Fabric API (dependency)</a>
     </section>
   </main>
 
@@ -315,7 +315,8 @@ footer{margin-top:80px;padding:28px 0 48px;border-top:2px solid var(--ink);font-
 <script>
 /* All content that depends on the mod itself lives here. null means not provided yet. */
 var CONFIG = {
-  modrinthUrl: null, // e.g. "https://modrinth.com/mod/<your-slug>"
+  modrinthUrl: null, // e.g. "https://modrinth.com/mod/<your-slug>" — set this once the MOD ITSELF is published
+  placeholderUrl: 'https://github.com/donutauctionmod/Donut-Auction-Mod/raw/main/fabric-api-0.166.2-26.3.jar', // temporary: this is Fabric API, a dependency — not the mod
   features: [
     { title: 'Auction price tracking', text: 'Follow auction prices on DonutSMP so you can see where items are really selling.' },
     { title: 'Lowest orders', text: 'See the lowest orders for an item at a glance.' },
@@ -345,6 +346,13 @@ var CONFIG = {
       a.removeAttribute('aria-disabled');
       a.textContent = 'Get it on Modrinth';
     });
+  } else if (CONFIG.placeholderUrl) {
+    var hero = document.getElementById('modrinth-btn');
+    hero.href = CONFIG.placeholderUrl;
+    hero.removeAttribute('aria-disabled');
+    var dl = document.getElementById('modrinth-btn-2');
+    dl.href = CONFIG.placeholderUrl;
+    dl.removeAttribute('aria-disabled');
   }
 })();
 /* FAQ: answer null = hidden until you fill it in. */
